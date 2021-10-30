@@ -4,9 +4,9 @@ It is very much a work in progress, please don't expect it to work!
 
 ## Architecture
 
-The Django framework is used to tie it all together and so a basic knowmedge of Django is very useful if you want to work on this.
+The Django framework ties this project together and so a basic knowledge of Django is very useful if you want to work on this.
 
-This has no dependencies on GCP or AWS, a DockerFile is provided as a deployment options. There is also a Makefile with some handy commands to get up and running.
+This has no dependencies on GCP or AWS, a DockerFile is provided as a deployment option. There is also a Makefile with some handy commands to get up and running.
 
 Scheduling of tasks uses apscheduler, wrapped in django_apscheduler.
 
