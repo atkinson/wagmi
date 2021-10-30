@@ -1,0 +1,12 @@
+ciso8601==2.1.3
+waitress
+django
+django-environ
+django-apscheduler
+pyyaml
+
+ftx
+pandas_market_calendars
+pyEX
+
+psycopg2-binary

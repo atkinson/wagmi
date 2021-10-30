@@ -1,0 +1,12 @@
+- model: sizing.exchange
+  pk: 1
+  fields:
+    name: ftx
+- model: sizing.exchange
+  pk: 2
+  fields:
+    name: binance
+- model: sizing.exchange
+  pk: 3
+  fields:
+    name: nyse
