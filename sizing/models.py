@@ -52,12 +52,14 @@ class StrategyPositionRequestManager(models.Manager):
         exchange, _ = Exchange.objects.get_or_create(name=exchange_name)
         security, _ = Security.objects.get_or_create(name=security_name)
 
-        return StrategyPositionRequest.objects.create(
+        return StrategyPositionRequest.objects.get_or_create(
             strategy=strategy,
             exchange=exchange,
             security=security,
-            weight=weight,
-            arrival_price_usd=arrival_price_usd,
+            defaults={
+                "weight": weight,
+                "arrival_price_usd": arrival_price_usd,
+            },
         )
 
     def close(
@@ -154,17 +156,18 @@ class TargetPositionManager(models.Manager):
                     Decimal(req.weight) * req.strategy.max_position_size_usd
                 )
 
-            dp = TargetPosition.objects.create(
+            dp, created = TargetPosition.objects.get_or_create(
                 security=security,
                 exchange=req.exchange,  # TODO - do we care about multiple exchanges?
-                size=desired_size / Decimal(req.arrival_price_usd),
+                defaults={
+                    "size": desired_size / Decimal(req.arrival_price_usd)
+                },
             )
 
             for req in reqs:
                 logger.info(
                     f"TargetPosition {dp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
                 )
-                req.delete()
 
 
 class TargetPosition(models.Model):
