@@ -41,14 +41,19 @@ class StrategyPositionRequestManager(models.Manager):
         strategy_name: str,
         exchange_name: str,
         security_name: str,
-        size: float,
+        weight: float,
+        arrival_price_usd: float,
     ):
         strategy, _ = Strategy.objects.get_or_create(name=strategy_name)
         exchange, _ = Exchange.objects.get_or_create(name=exchange_name)
         security, _ = Security.objects.get_or_create(name=security_name)
 
         return StrategyPositionRequest.objects.create(
-            strategy=strategy, exchange=exchange, security=security, size=size
+            strategy=strategy,
+            exchange=exchange,
+            security=security,
+            weight=weight,
+            arrival_price_usd=arrival_price_usd,
         )
 
     def close(
@@ -92,7 +97,8 @@ class StrategyPositionRequest(models.Model):
     strategy = models.ForeignKey("Strategy", on_delete=models.CASCADE)
     exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
     security = models.ForeignKey("Security", on_delete=models.CASCADE)
-    size = models.FloatField()
+    weight = models.FloatField()
+    arrival_price_usd = models.FloatField()
 
     desired_position = models.ForeignKey(
         "TargetPosition",
@@ -109,10 +115,11 @@ class StrategyPositionRequest(models.Model):
     def __str__(self):
         return json.dumps(
             {
-                "strategy": self.strategy,
-                "exchange": self.exchange,
-                "security": self.security,
-                "size": self.size,
+                "strategy": self.strategy.name,
+                "exchange": self.exchange.name,
+                "security": self.security.name,
+                "weight": self.weight,
+                "arrival_price_usd": self.arrival_price_usd,
             }
         )
 
@@ -133,12 +140,12 @@ class TargetPositionManager(models.Manager):
             )
 
             for req in reqs:
-                desired_size += req.size * req.strategy.max_position_size_usd
+                desired_size += req.weight * req.strategy.max_position_size_usd
 
             dp = TargetPosition.objects.create(
                 security=security,
                 exchange=req.exchange,  # TODO - do we care about multiple exchanges?
-                size=desired_size / quote,
+                size=desired_size / req.arrival_price_usd,
             )
 
 

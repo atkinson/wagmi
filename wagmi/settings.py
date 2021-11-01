@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "django_apscheduler",
     "sizing",
     "execution",
+    "yolo",
 ]
 
 MIDDLEWARE = [
