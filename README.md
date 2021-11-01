@@ -31,7 +31,8 @@ make a .env file (based on .env-example)
 setup a database (connection string and password in the env file) - if you like, you can get a postgres running locally in docker using 'make runpg' then 'make createdb'
 
 check everything is working: ./manage.py migrate (if not - fix any errors)
-load the fixtures: ./manage.py loaddata exchanges.yaml
+load the exchanges: ./manage.py loaddata exchanges.yaml
+load the strategies ./manage.py loaddata strategies.yaml
 make a user: ./manage.py createsuperuser
 run it: ./manage.py runserver
 go to: https://localhost:8000/wagmi/ and login.

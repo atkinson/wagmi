@@ -12,35 +12,45 @@ from sizing.models import (
 
 
 class StrategyAdmin(admin.ModelAdmin):
-    pass
+    list_display = ["name", "exchange", "max_position_size_usd", "command"]
 
 
 admin.site.register(Strategy, StrategyAdmin)
 
 
 class StrategyPositionRequestAdmin(admin.ModelAdmin):
-    pass
+    list_display = [
+        "strategy",
+        "exchange",
+        "security",
+        "weight",
+        "arrival_price_usd",
+    ]
 
 
 admin.site.register(StrategyPositionRequest, StrategyPositionRequestAdmin)
 
 
 class TargetPositionAdmin(admin.ModelAdmin):
-    pass
+    list_display = [
+        "exchange",
+        "security",
+        "size",
+    ]
 
 
 admin.site.register(TargetPosition, TargetPositionAdmin)
 
 
 class ExchangeAdmin(admin.ModelAdmin):
-    pass
+    list_display = ["name"]
 
 
 admin.site.register(Exchange, ExchangeAdmin)
 
 
 class SecurityAdmin(admin.ModelAdmin):
-    pass
+    list_display = ["name"]
 
 
 admin.site.register(Security, SecurityAdmin)

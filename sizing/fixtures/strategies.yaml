@@ -1,0 +1,7 @@
+- model: sizing.strategy
+  pk: 1
+  fields:
+    name: yolo
+    exchange_id: 1
+    max_position_size_usd: 10000
+    command: rw_yolo

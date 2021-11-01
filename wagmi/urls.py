@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 
+admin.site.site_header = "W.A.G.M.I. - systematic trade execution"
+
 urlpatterns = [
-    #path("trade/", include("execution.urls")),
-    path('wagmi/', admin.site.urls),
+    path("wagmi/", admin.site.urls),
 ]
