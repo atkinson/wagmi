@@ -48,6 +48,15 @@ The plan is:
 3. Consider optimising execution (it currently just tries to place an aggressive order inthe order book)
 4. Serve as a framework for other strategies.
 
+## Coding guidelines
+
+1. PEP8 - please use the code formatter, black: https://github.com/psf/black
+2. docstrings - please use Google style docstrings: https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings
+3. For all other style matters, please follow the google styleguide ofr python.
+4. Tests - Please use pytest
+5. Dependencies - please try to minimise them.
+6. Simplicity - please don't try to be too clever; code should be as simple as possible to understand it's purpose.
+
 ## BSD License
 
 Copyright (c) 2021, Rich Atkinson

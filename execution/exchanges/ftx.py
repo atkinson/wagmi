@@ -1,17 +1,26 @@
+import logging
+
 import ftx
 
-class FTXExecute(object):
+logger = logging.getLogger("execution")
+
+
+class FTXExchange(object):
 
     BUY = LONG = "buy"
     SELL = SHORT = "sell"
 
-    def __init__(self, subaccount, debug, api_key, api_secret) -> None:
+    def __init__(self, subaccount, testmode, api_key, api_secret) -> None:
 
         self.client = ftx.FtxClient(
             api_key=api_key, api_secret=api_secret, subaccount_name=subaccount
         )
-        self.debug = debug
-        print(f"Executor inited with debug={debug}")
+        self.testmode = testmode
+        print(f"Executor inited with testmode={testmode}")
+
+    def get_position(self, market):
+        # TODO
+        pass
 
     def place_order(self, market, side, size_usd):
         latest = self.client.get_future(market)
@@ -25,14 +34,14 @@ class FTXExecute(object):
 
         print(
             'endpoint="executor",'
-            "debug={}, "
+            "testmode={}, "
             'market="{}", '
             'side="{}", '
             "price={:,.4f}, "
-            "size={:,.4f}".format(self.debug, market, side, limit, size)
+            "size={:,.4f}".format(self.testmode, market, side, limit, size)
         )
 
-        if not self.debug:
+        if not self.testmode:
             try:
                 self.client.place_order(
                     market=market,
@@ -89,12 +98,12 @@ class FTXExecute(object):
             limit = latest["bid"]  # * 1.0005
 
         print(
-            "debug={}, "
+            "testmode={}, "
             'market="{}", '
             'side="{}", '
             "price={:,.4f}, "
             "size={:,.4f}".format(
-                self.debug,
+                self.testmode,
                 position["future"],
                 desired_side,
                 limit,
@@ -102,7 +111,7 @@ class FTXExecute(object):
             )
         )
 
-        if not self.debug:
+        if not self.testmode:
             try:
                 self.client.place_order(
                     market=position["future"],

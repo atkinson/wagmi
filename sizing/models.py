@@ -14,7 +14,7 @@ class Strategy(models.Model):
     max_position_size_usd = models.DecimalField(
         max_digits=9,
         decimal_places=2,
-        help_text="Maximum position size in USD. A Strategy may hold many positions of this size.",
+        help_text="Maximum position size in USD. A Strategy should weight it's investments as a proportion of this size.",
         default=1000.0,
     )
     command = models.CharField(max_length=24)
