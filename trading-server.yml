@@ -16,12 +16,13 @@ services:
     volumes:
       - .:/app:z
     env_file:
-      - ./.envs/.local/.django
-      - ./.envs/.local/.postgres
+      - ./wagmi/.env
     ports:
       - "8080:8080"
-    command: /start
+    command: ./wagmi/start.sh
 
   postgres:
     image: postgres:12
+    env_file:
+      - ./wagmi/.env
 
