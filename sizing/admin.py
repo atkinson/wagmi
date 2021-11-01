@@ -33,9 +33,9 @@ admin.site.register(StrategyPositionRequest, StrategyPositionRequestAdmin)
 
 class TargetPositionAdmin(admin.ModelAdmin):
     list_display = [
-        "exchange",
         "security",
         "size",
+        "exchange",
     ]
 
 

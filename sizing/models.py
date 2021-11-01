@@ -106,13 +106,6 @@ class StrategyPositionRequest(models.Model):
     weight = models.FloatField()
     arrival_price_usd = models.FloatField()
 
-    desired_position = models.ForeignKey(
-        "TargetPosition",
-        null=True,
-        related_name="position_requests",
-        on_delete=models.SET_NULL,
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -147,9 +140,7 @@ class TargetPositionManager(models.Manager):
 
             desired_size = Decimal(0.0)
 
-            reqs = StrategyPositionRequest.objects.filter(
-                security=security, desired_position=None
-            )
+            reqs = StrategyPositionRequest.objects.filter(security=security)
 
             for req in reqs:
                 desired_size += (
