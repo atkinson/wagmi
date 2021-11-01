@@ -1,6 +1,10 @@
+import logging
 import json
+from decimal import Decimal
 from django.db import models
 from django.conf import settings
+
+logger = logging.getLogger("sizing")
 
 
 class Strategy(models.Model):
@@ -125,28 +129,42 @@ class StrategyPositionRequest(models.Model):
 
 
 class TargetPositionManager(models.Manager):
-    def create_new_desired_positions(self):
+    def create_new_desired_positions(self, security=None):
         """Once all new Position Requests are in for the day,
         we can now calculate the net of all of these as a set
         of TargetPositions. One TargetPosition per Security.
-        """
-        for security in Security.objects.all():
 
-            quote = security.get_iex_quote()
-            desired_size = 0.0
+        Optional - pass in a Security to only recalaculate that one.
+        """
+        if security:
+            securities = Security.objects.filter(id=security.id)
+        else:
+            securities = Security.objects.all()
+
+        for security in securities:
+
+            desired_size = Decimal(0.0)
 
             reqs = StrategyPositionRequest.objects.filter(
                 security=security, desired_position=None
             )
 
             for req in reqs:
-                desired_size += req.weight * req.strategy.max_position_size_usd
+                desired_size += (
+                    Decimal(req.weight) * req.strategy.max_position_size_usd
+                )
 
             dp = TargetPosition.objects.create(
                 security=security,
                 exchange=req.exchange,  # TODO - do we care about multiple exchanges?
-                size=desired_size / req.arrival_price_usd,
+                size=desired_size / Decimal(req.arrival_price_usd),
             )
+
+            for req in reqs:
+                logger.info(
+                    f"TargetPosition {dp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
+                )
+                req.delete()
 
 
 class TargetPosition(models.Model):
@@ -162,7 +180,7 @@ class TargetPosition(models.Model):
 
     security = models.ForeignKey("Security", on_delete=models.CASCADE)
     exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
-    size = models.FloatField(help_text="how many stonks")
+    size = models.FloatField(help_text="how many units of the security")
 
     created_at = models.DateTimeField(auto_now_add=True)
 

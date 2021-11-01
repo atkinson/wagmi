@@ -2,7 +2,7 @@ import logging
 import requests
 from django.conf import settings
 
-from sizing.models import Strategy, StrategyPositionRequest
+from sizing.models import Strategy, StrategyPositionRequest, TargetPosition
 
 strategy = Strategy.objects.get(name="yolo")
 
@@ -29,5 +29,6 @@ def get_yolo_weights():
                 weight=position.get("combo_weight"),
                 arrival_price_usd=position.get("arrival_price"),
             )
+        TargetPosition.objects.create_new_desired_positions()
     else:
         logger.error(f'yolo api failed: {yolo.get("message")}')
