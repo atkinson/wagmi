@@ -1,11 +1,15 @@
 import logging
+import json
 
+from django.conf import settings
 import ftx
+
+from execution.exchanges import BaseExchange
 
 logger = logging.getLogger("execution")
 
 
-class FTXExchange(object):
+class FTXExchange(BaseExchange):
 
     BUY = LONG = "buy"
     SELL = SHORT = "sell"
@@ -15,30 +19,48 @@ class FTXExchange(object):
         self.client = ftx.FtxClient(
             api_key=api_key, api_secret=api_secret, subaccount_name=subaccount
         )
+
         self.testmode = testmode
-        print(f"Executor inited with testmode={testmode}")
+        logger.debug(f"ftx inited with testmode={testmode}")
+
+    def parse_symbol(self, symbol):
+        # remove /USD as ftx doesn't care for USD
+        if "/" in symbol:
+            symbol = symbol.split("/")[0]
+        return symbol
 
     def get_position(self, market):
-        # TODO
-        pass
+        market = self.parse_symbol(market)
+        spot_balances = self.client.get_balances()  # spot
+        positions = list(filter(lambda x: x["coin"] == market, spot_balances))
+        return positions.pop().get("total")
 
-    def place_order(self, market, side, size_usd):
-        latest = self.client.get_future(market)
+    def set_position(self, market, units):
+        current_position = self.get_position(market)
+        delta = current_position - units
+
+        # TODO: This needs to go somewhere else - we shouldn't have YOLO in this module.
+        if abs(delta) > (settings.RW_YOLO_TRADE_BUFFER * current_position):
+            if delta < 0:
+                self._place_order(market, self.SHORT, delta)
+        # TODO
+        # log whatgever you do.
+
+    def _place_order(self, market, side, units):
+        latest = self.client.get_market(market)
 
         if side == self.BUY:
             limit = latest["ask"]  # * 0.9995
         else:
             limit = latest["bid"]  # * 1.0005
 
-        size = size_usd / limit
-
-        print(
+        logger.info(
             'endpoint="executor",'
             "testmode={}, "
             'market="{}", '
             'side="{}", '
             "price={:,.4f}, "
-            "size={:,.4f}".format(self.testmode, market, side, limit, size)
+            "units={:,.4f}".format(self.testmode, market, side, limit, units)
         )
 
         if not self.testmode:
@@ -47,90 +69,8 @@ class FTXExchange(object):
                     market=market,
                     side=side,
                     price=limit,
-                    size=size,
+                    size=units,
                     type="limit",
                 )
             except Exception as e:
                 print(e)
-
-    def take_side(self, side, market, size_usd):
-        position = self.client.get_position(market)
-        latest = self.client.get_future(market)
-
-        if (position is None) or (position["size"] == 0):
-            print(f"OPEN {side} for: {market}")
-            self.place_order(market, side, size_usd)
-
-        elif (
-            (position["side"] == self.SHORT)
-            and (side == self.LONG)
-            and position["size"] > 0.0
-        ):
-            # need to buy to cover plus take long position
-            print(f"LONG to SHORT switch for : {market}")
-            approx_order = (position["size"] * latest["ask"]) + size_usd
-            self.place_order(market, self.LONG, approx_order)
-
-        elif (
-            (position["side"] == self.LONG)
-            and (side == self.SHORT)
-            and position["size"] > 0.0
-        ):
-            # need to sell to close plus take short position
-            print(f"SHORT to LONG switch for : {market}")
-            approx_order = (position["size"] * latest["bid"]) + size_usd
-            self.place_order(market, self.SHORT, approx_order)
-        else:
-            print(f"Did not trade {market}")
-
-    def close_position(self, market):
-        position = self.client.get_position(market)
-        latest = self.client.get_future(market)
-
-        if position["side"] == self.SHORT:
-            desired_side = self.LONG
-        else:
-            desired_side = self.SHORT
-
-        if desired_side == self.LONG:
-            limit = latest["ask"]  # * 0.9995
-        else:
-            limit = latest["bid"]  # * 1.0005
-
-        print(
-            "testmode={}, "
-            'market="{}", '
-            'side="{}", '
-            "price={:,.4f}, "
-            "size={:,.4f}".format(
-                self.testmode,
-                position["future"],
-                desired_side,
-                limit,
-                position["size"],
-            )
-        )
-
-        if not self.testmode:
-            try:
-                self.client.place_order(
-                    market=position["future"],
-                    side=desired_side,
-                    price=limit,
-                    size=position["size"],
-                    type="limit",
-                    reduce_only=True,
-                )
-            except Exception as e:
-                print(e)
-
-    def close_all_positions(self):
-        """
-        While closing the position, I want to be more agressive
-        to get out before the reversion kicks in.
-        """
-        for position in self.client.get_positions():
-            if position["size"] != 0.0:
-                self.close_position(position["future"])
-
-        print("Closed all positions.")

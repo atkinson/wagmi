@@ -27,6 +27,9 @@ class OrderManager(models.Manager):
                     api_key=settings.WAGMI_FTX_API_KEY,
                     api_secret=settings.WAGMI_FTX_API_SECRET,
                 )
+                exchange.set_position(
+                    market=target_position.security, units=target_position.size
+                )
 
 
 class Order(models.Model, AuditableMixin):
