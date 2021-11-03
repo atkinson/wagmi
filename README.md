@@ -1,6 +1,6 @@
 # WAGMI is an execution framework for systematic strategies.
 
-It is very much a work in progress, please don't expect it to work!
+It is very much a work in progress, IT CURRENTLY DOES NOT WORK!!
 
 ## Architecture
 
@@ -24,19 +24,22 @@ Some of the above works, some is incomplete. I ripped this code out of another p
 
 ## Getting Started
 
-clone the repo
-create a virtualenv (I recommend pyenv-virtualenv)
-install the requirements 'pip install -r requirements.txt'
-make a .env file (based on .env-example)
-setup a database (connection string and password in the env file) - if you like, you can get a postgres running locally in docker using 'make runpg' then 'make createdb'
+1. clone the repo
+2. create a virtualenv (I recommend pyenv-virtualenv)
+3. install the requirements 'pip install -r requirements.txt'
+4. make a .env file (based on .env-example)
+5. setup a database (connection string and password in the env file) - if you like, you can get a postgres running locally in docker using 'make runpg' then 'make createdb'
+6. check everything is working: ./manage.py migrate (if not - fix any errors)
+7. load the exchanges: ./manage.py loaddata exchanges.yaml
+8. load the strategies: ./manage.py loaddata strategies.yaml
+9. make a user: ./manage.py createsuperuser
 
-check everything is working: ./manage.py migrate (if not - fix any errors)
-load the fixtures: ./manage.py loaddata exchanges.yaml
-make a user: ./manage.py createsuperuser
-run it: ./manage.py runserver
-go to: https://localhost:8000/wagmi/ and login.
+## Either run it locally...
 
-## Run with docker-compose
+1. run it: ./manage.py runserver
+2. go to: https://localhost:8000/wagmi/ and login.
+
+## Or, run with docker-compose
 
 1. Make sure you have docker and docker-compose is installed
 2. run 
@@ -47,7 +50,7 @@ go to: https://localhost:8000/wagmi/ and login.
 
 ## Contributing
 
-Please use create a fork and submit pull requests!
+Please ping me if you want to help!
 
 The plan is:
 

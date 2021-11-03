@@ -39,10 +39,11 @@ class FTXExchange(BaseExchange):
         current_position = self.get_position(market)
         delta = current_position - units
 
-        # TODO: This needs to go somewhere else - we shouldn't have YOLO in this module.
-        if abs(delta) > (settings.RW_YOLO_TRADE_BUFFER * current_position):
-            if delta < 0:
-                self._place_order(market, self.SHORT, delta)
+        if delta < 0:
+            self._place_order(market, self.SHORT, delta)
+        else:
+            self._place_order(market, self.LONG, delta)
+
         # TODO
         # log whatgever you do.
 
