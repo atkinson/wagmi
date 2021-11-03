@@ -31,11 +31,19 @@ make a .env file (based on .env-example)
 setup a database (connection string and password in the env file) - if you like, you can get a postgres running locally in docker using 'make runpg' then 'make createdb'
 
 check everything is working: ./manage.py migrate (if not - fix any errors)
-load the exchanges: ./manage.py loaddata exchanges.yaml
-load the strategies ./manage.py loaddata strategies.yaml
+load the fixtures: ./manage.py loaddata exchanges.yaml
 make a user: ./manage.py createsuperuser
 run it: ./manage.py runserver
 go to: https://localhost:8000/wagmi/ and login.
+
+## Run with docker-compose
+
+1. Make sure you have docker and docker-compose is installed
+2. run 
+    2.1 docker-compose -f trading-server.yml up -d
+    2.2 docker-compose -f trading-server.yml exec django python manage.py createsuperuser
+
+3. go to: https://localhost:8000/wagmi/ and login.
 
 ## Contributing
 

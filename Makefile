@@ -10,7 +10,7 @@ run:
 	docker run --name wagmi -p 8080:8080 -d --link postgres wagmi
 
 runpg:
-	docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=${WAGMI_POSTGRES_PASSWORD} -d postgres:12
+	docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} -d postgres:12
 
 createdb:
 	createdb -h localhost -O postgres -U postgres wagmi
