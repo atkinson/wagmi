@@ -38,7 +38,7 @@ DATABASES = {
         "NAME": env.str("POSTGRES_DB"),
         "USER": env.str("POSTGRES_USER"),
         "PASSWORD": env.str("POSTGRES_PASSWORD"),
-        "HOST": "postgres",
+        "HOST": env.str("POSTGRES_HOST"),
         "PORT": 5432,
     },
 }
@@ -162,7 +162,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.StreamHandler",
             "formatter": "default",
         }
@@ -170,7 +170,7 @@ LOGGING = {
     "loggers": {
         "*": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         }
     },
