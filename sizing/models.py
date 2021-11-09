@@ -3,6 +3,7 @@ import json
 from decimal import Decimal
 from django.db import models
 from django.conf import settings
+from datetime import datetime
 
 logger = logging.getLogger("sizing")
 
@@ -40,44 +41,28 @@ class Security(models.Model):
 
 
 class StrategyPositionRequestManager(models.Manager):
-    def open(
+    def set_position(
         self,
         strategy_name: str,
         exchange_name: str,
         security_name: str,
         weight: float,
         arrival_price_usd: float,
+        calculated_at: datetime,
     ):
         strategy, _ = Strategy.objects.get_or_create(name=strategy_name)
         exchange, _ = Exchange.objects.get_or_create(name=exchange_name)
         security, _ = Security.objects.get_or_create(name=security_name)
 
-        return StrategyPositionRequest.objects.get_or_create(
+        return StrategyPositionRequest.objects.update_or_create(
             strategy=strategy,
             exchange=exchange,
             security=security,
             defaults={
                 "weight": weight,
                 "arrival_price_usd": arrival_price_usd,
+                "calculated_at": calculated_at,
             },
-        )
-
-    def close(
-        self, strategy_name: str, exchange_name: str, security_name: str
-    ):
-        position = self.get_position(
-            strategy_name, exchange_name, security_name
-        )
-
-        strategy, _ = Strategy.objects.get_or_create(name=strategy_name)
-        exchange, _ = Exchange.objects.get_or_create(name=exchange_name)
-        security, _ = Security.objects.get_or_create(name=security_name)
-
-        StrategyPositionRequest.objects.create(
-            strategy=strategy,
-            exchange=exchange,
-            security=security,
-            size=-position,
         )
 
     def get_position(
@@ -97,7 +82,9 @@ class StrategyPositionRequest(models.Model):
         strategy (Strategy): The Strategy making this request
         exchange (Exchange): Exchange the security should be traded on
         security (Security): The security to be traded
-        size (float): Notional size in units of the request (not shares or dollars)
+        weight (float): Notional weight of the request (not shares or dollars)
+        arrival_price_usd (float): Price in USd of the security when we calculated weights
+        calculated_at (datetime): Datetime when the weisghts were calculated.
     """
 
     strategy = models.ForeignKey("Strategy", on_delete=models.CASCADE)
@@ -105,6 +92,7 @@ class StrategyPositionRequest(models.Model):
     security = models.ForeignKey("Security", on_delete=models.CASCADE)
     weight = models.FloatField()
     arrival_price_usd = models.FloatField()
+    calculated_at = models.DateTimeField()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -147,7 +135,7 @@ class TargetPositionManager(models.Manager):
                     Decimal(req.weight) * req.strategy.max_position_size_usd
                 )
 
-            dp, created = TargetPosition.objects.get_or_create(
+            dp, created = TargetPosition.objects.update_or_create(
                 security=security,
                 exchange=req.exchange,  # TODO - do we care about multiple exchanges?
                 defaults={

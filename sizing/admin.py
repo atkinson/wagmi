@@ -25,6 +25,7 @@ class StrategyPositionRequestAdmin(admin.ModelAdmin):
         "security",
         "weight",
         "arrival_price_usd",
+        "calculated_at",
     ]
 
 

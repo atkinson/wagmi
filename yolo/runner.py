@@ -1,4 +1,8 @@
 import logging
+from datetime import datetime
+
+from django.utils import timezone
+
 import requests
 from django.conf import settings
 
@@ -21,16 +25,24 @@ def get_yolo_weights():
             logger.info(
                 f"{position.get('ticker')}, {position.get('combo_weight')}, {position.get('arrival_price')}"
             )
+            calculated_at = timezone.make_aware(
+                datetime.strptime(position.get("date"), "%Y-%m-%d"),
+                timezone.utc,
+            )
 
-            StrategyPositionRequest.objects.open(
+            StrategyPositionRequest.objects.set_position(
                 strategy_name=strategy.name,
                 exchange_name=strategy.exchange,
                 security_name=position.get("ticker"),
                 weight=position.get("combo_weight"),
                 arrival_price_usd=position.get("arrival_price"),
+                calculated_at=calculated_at,
             )
 
-            # TODO: Close positions that were open yesterday and not today.
+        StrategyPositionRequest.objects.filter(
+            strategy=strategy, calculated_at__lt=calculated_at
+        ).update(weight=0.0)
+
         TargetPosition.objects.create_new_desired_positions()
     else:
         logger.error(f'yolo api failed: {yolo.get("message")}')
