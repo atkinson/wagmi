@@ -21,14 +21,12 @@ def get_yolo_weights():
     yolo = resp.json()
 
     if yolo.get("success") == "true":
+        last_updated = yolo.get("last_updated")
         for position in yolo.get("data"):
             logger.info(
                 f"{position.get('ticker')}, {position.get('combo_weight')}, {position.get('arrival_price')}"
             )
-            calculated_at = timezone.make_aware(
-                datetime.strptime(position.get("date"), "%Y-%m-%d"),
-                timezone.utc,
-            )
+            calculated_at = datetime.fromtimestamp(last_updated, timezone.utc)
 
             StrategyPositionRequest.objects.set_position(
                 strategy_name=strategy.name,
