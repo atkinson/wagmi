@@ -3,5 +3,5 @@
   fields:
     name: yolo
     exchange_id: 1
-    max_position_size_usd: 10000
+    max_position_size_usd: 1000
     command: rw_yolo
