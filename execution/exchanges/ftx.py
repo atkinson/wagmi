@@ -1,6 +1,6 @@
 import logging
 import json
- import math
+import math
 from types import BuiltinMethodType
 
 from django.conf import settings
