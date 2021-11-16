@@ -1,4 +1,5 @@
 # WAGMI is an execution framework for systematic strategies.
+[![Build](https://github.com/atkinson/wagmi/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/atkinson/wagmi/actions/workflows/integration-tests.yml)
 
 It is very much a work in progress, IT CURRENTLY DOES NOT WORK!!
 
