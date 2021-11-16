@@ -37,7 +37,7 @@ Some of the above works, some is incomplete. I ripped this code out of another p
 ## Either run it locally...
 
 1. run it: ./manage.py runserver
-2. go to: https://localhost:8000/wagmi/ and login.
+2. go to: https://localhost:8080/wagmi/ and login.
 
 ## Or, run with docker-compose
 
@@ -46,7 +46,7 @@ Some of the above works, some is incomplete. I ripped this code out of another p
     2.1 docker-compose -f trading-server.yml up -d
     2.2 docker-compose -f trading-server.yml exec django python manage.py createsuperuser
 
-3. go to: https://localhost:8000/wagmi/ and login.
+3. go to: https://localhost:8080/wagmi/ and login.
 
 ## Contributing
 

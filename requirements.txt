@@ -8,3 +8,7 @@ pandas_market_calendars
 pyEX
 
 psycopg2-binary
+
+# Exchanges:
+ciso8601
+ftx
