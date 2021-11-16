@@ -12,7 +12,7 @@ strategy = Strategy.objects.get(name="yolo")
 
 logger = logging.getLogger(strategy.name)
 
-url = f"https://api.robotwealth.com/v1/yolo/weights?api_key={settings.RW_YOLO_API_KEY}"
+url = f"{strategy.url}?api_key={settings.RW_API_KEY}"
 
 
 def get_yolo_weights():
@@ -28,7 +28,7 @@ def get_yolo_weights():
             )
             calculated_at = datetime.fromtimestamp(last_updated, timezone.utc)
 
-            StrategyPositionRequest.objects.set_position(
+            spr = StrategyPositionRequest.objects.set_position(
                 strategy_name=strategy.name,
                 exchange_name=strategy.exchange,
                 security_name=position.get("ticker"),
@@ -37,10 +37,20 @@ def get_yolo_weights():
                 calculated_at=calculated_at,
             )
 
-        StrategyPositionRequest.objects.filter(
-            strategy=strategy, calculated_at__lt=calculated_at
-        ).update(weight=0.0)
+            TargetPosition.objects.create_new_desired_positions(
+                security=spr.security,
+                execute_immediately=strategy.execute_immediately,
+            )
 
-        TargetPosition.objects.create_new_desired_positions()
+        closing_positions = StrategyPositionRequest.objects.filter(
+            strategy=strategy, calculated_at__lt=calculated_at
+        )
+        closing_positions.update(weight=0.0)
+        for position in closing_positions:
+            TargetPosition.objects.create_new_desired_positions(
+                security=position.security,
+                execute_immediately=position.execute_immediately,
+            )
+
     else:
         logger.error(f'yolo api failed: {yolo.get("message")}')

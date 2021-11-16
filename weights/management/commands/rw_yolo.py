@@ -4,7 +4,7 @@ import logging
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from yolo.runner import get_yolo_weights
+from weights.runner import get_yolo_weights
 
 logger = logging.getLogger(__name__)
 

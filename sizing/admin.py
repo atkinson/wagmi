@@ -12,7 +12,13 @@ from sizing.models import (
 
 
 class StrategyAdmin(admin.ModelAdmin):
-    list_display = ["name", "exchange", "max_position_size_usd", "command"]
+    list_display = [
+        "name",
+        "exchange",
+        "max_position_size_usd",
+        "execute_immediately",
+        "command",
+    ]
 
 
 admin.site.register(Strategy, StrategyAdmin)
