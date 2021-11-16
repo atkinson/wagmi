@@ -21,6 +21,14 @@ class FTXExchange(BaseExchange):
         self.testmode = testmode
         logger.debug(f"ftx inited with testmode={testmode}")
 
+    def _parse_symbol(self, symbol):
+        # remove /USD as ftx is inconsistent
+        # e.g. when getting balances it's just ther coin.
+        # When placing an order, you need the denominating currency.
+        if "/" in symbol:
+            symbol = symbol.split("/")[0]
+        return symbol
+
     def get_quote(self, market):
         """Get a quote
 
@@ -28,31 +36,7 @@ class FTXExchange(BaseExchange):
             market (string): The ticker you want quoted.
 
         Returns:
-            dict: a dictrionary, example below.
-
-        {
-            "name": "BTC-0628",
-            "baseCurrency": null,
-            "quoteCurrency": null,
-            "quoteVolume24h": 28914.76,
-            "change1h": 0.012,
-            "change24h": 0.0299,
-            "changeBod": 0.0156,
-            "highLeverageFeeExempt": false,
-            "minProvideSize": 0.001,
-            "type": "future",
-            "underlying": "BTC",
-            "enabled": true,
-            "ask": 3949.25,
-            "bid": 3949,
-            "last": 10579.52,
-            "postOnly": false,
-            "price": 10579.52,
-            "priceIncrement": 0.25,
-            "sizeIncrement": 0.0001,
-            "restricted": false,
-            "volumeUsd24h": 28914.76
-        }
+            dict: a dictionary result
 
         """
         # TODO check there is one and only one result?
@@ -85,7 +69,7 @@ class FTXExchange(BaseExchange):
         quote = self.get_quote(market)
         return quote.get("sizeIncrement")
 
-    def get_position(self, market: str):
+    def _get_position(self, market: str):
         """[summary]
 
         Args:
@@ -95,10 +79,15 @@ class FTXExchange(BaseExchange):
             [type]: [description]
         """
         spot_balances = self.client.get_balances()  # spot
-        positions = list(filter(lambda x: x["coin"] == market, spot_balances))
+        print(spot_balances)
+        symbol = self._parse_symbol(market.name)
+        positions = list(filter(lambda x: x["coin"] == symbol, spot_balances))
         if len(positions) == 1:
-            return positions.pop().get("total")
+            retval = positions.pop().get("total")
+            print(f"{market} has exactly one open position of size {retval}")
+            return retval
         elif not len(positions):
+            print(f"{market} does not have an open position")
             return 0.0
         else:
             raise IndexError(
@@ -113,8 +102,8 @@ class FTXExchange(BaseExchange):
             target_position ([type]): [description]
         """
 
-        # TODO This is currently opening positions when there's already a position.
-        current_position = self.get_position(market)
+        # TODO Need to consider if you can enter a short position on this security.
+        current_position = self._get_position(market)
 
         delta = target_position - current_position
 
@@ -167,6 +156,7 @@ class FTXExchange(BaseExchange):
                         price=target_price,
                         size=units,
                         type="limit",
+                        post_only=True,
                     )
                 )
             except Exception as e:
