@@ -1,0 +1,31 @@
+name: Build
+
+on: [push, workflow_dispatch]
+
+jobs:
+  docker:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Create main .env file
+      run: cp wagmi/.env-example wagmi/.env
+
+    - name: Start containers
+      run: docker-compose -f "trading-server.yml" up -d --build
+
+    - name: Test wagmi is live
+      uses: nick-invision/retry@v2
+      with:
+        timeout_seconds: 15
+        retry_wait_seconds: 10
+        max_attempts: 3
+        retry_on: error
+        command: curl -sSf http://localhost:8080/wagmi > /dev/null 2>&1
+
+    - name: Stop containers
+      if: always()
+      run: docker-compose -f "trading-server.yml" down
