@@ -14,22 +14,26 @@ class AuditableMixin(object):
 
 
 class OrderManager(models.Manager):
+    def create_order(self, target_position):
+        if target_position.exchange.name == "ftx":
+            logger.debug("Using exchange ftx")
+            exchange = ftx.FTXExchange(
+                subaccount=settings.WAGMI_FTX_SUB_ACCOUNT,
+                testmode=settings.WAGMI_ORDER_TESTMODE,
+                api_key=settings.WAGMI_FTX_API_KEY,
+                api_secret=settings.WAGMI_FTX_API_SECRET,
+            )
+            exchange.set_position(
+                market=target_position.security,
+                target_position=target_position.size,
+            )
+
     def create_orders(self, qs):
         """Receives a queryset of TargetPositions.
         Get's current position from exchange.
         Post's order to correct position"""
         for target_position in qs:
-            if target_position.exchange.name == "ftx":
-                logger.debug("Using exchange ftx")
-                exchange = ftx.FTXExchange(
-                    subaccount=settings.WAGMI_FTX_SUB_ACCOUNT,
-                    testmode=settings.WAGMI_ORDER_TESTMODE,
-                    api_key=settings.WAGMI_FTX_API_KEY,
-                    api_secret=settings.WAGMI_FTX_API_SECRET,
-                )
-                exchange.set_position(
-                    market=target_position.security, units=target_position.size
-                )
+            self.create_order(target_position)
 
 
 class Order(models.Model, AuditableMixin):

@@ -1,9 +1,10 @@
 import logging
 import json
-from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from datetime import datetime
+
+from execution.models import Order
 
 logger = logging.getLogger("sizing")
 
@@ -18,6 +19,8 @@ class Strategy(models.Model):
         help_text="Maximum position size in USD. A Strategy should weight it's investments as a proportion of this size.",
         default=1000.0,
     )
+    url = models.URLField("endpoint url")
+    execute_immediately = models.BooleanField(default=False)
     command = models.CharField(max_length=24)
 
     def __str__(self):
@@ -54,7 +57,7 @@ class StrategyPositionRequestManager(models.Manager):
         exchange, _ = Exchange.objects.get_or_create(name=exchange_name)
         security, _ = Security.objects.get_or_create(name=security_name)
 
-        return StrategyPositionRequest.objects.update_or_create(
+        obj, created = StrategyPositionRequest.objects.update_or_create(
             strategy=strategy,
             exchange=exchange,
             security=security,
@@ -64,6 +67,7 @@ class StrategyPositionRequestManager(models.Manager):
                 "calculated_at": calculated_at,
             },
         )
+        return obj
 
     def get_position(
         self, strategy_name: str, exchange_name: str, security_name: str
@@ -112,40 +116,51 @@ class StrategyPositionRequest(models.Model):
 
 
 class TargetPositionManager(models.Manager):
-    def create_new_desired_positions(self, security=None):
+    def create_new_desired_positions(
+        self, security=None, execute_immediately=False
+    ):
         """Once all new Position Requests are in for the day,
         we can now calculate the net of all of these as a set
         of TargetPositions. One TargetPosition per Security.
 
-        Optional - pass in a Security to only recalaculate that one.
+        Optional - pass in a Security, or Queryset of Security models.
         """
-        if security:
+        if (
+            security
+            and isinstance(security, models.QuerySet)
+            and security.model is Security
+        ):
+            securities = security
+        elif security and isinstance(security, Security):
             securities = Security.objects.filter(id=security.id)
+        elif security:
+            raise TypeError(
+                "security should be a single Security or a queryset, or None"
+            )
         else:
             securities = Security.objects.all()
 
         for security in securities:
+            desired_size = 0.0
 
-            desired_size = Decimal(0.0)
+            spr_qs = StrategyPositionRequest.objects.filter(security=security)
 
-            reqs = StrategyPositionRequest.objects.filter(security=security)
-
-            for req in reqs:
-                desired_size += (
-                    Decimal(req.weight) * req.strategy.max_position_size_usd
+            for req in spr_qs:
+                desired_size += req.weight * float(
+                    req.strategy.max_position_size_usd
                 )
 
-            dp, created = TargetPosition.objects.update_or_create(
+            tp, created = TargetPosition.objects.update_or_create(
                 security=security,
                 exchange=req.exchange,  # TODO - do we care about multiple exchanges?
-                defaults={
-                    "size": desired_size / Decimal(req.arrival_price_usd)
-                },
+                defaults={"size": desired_size / req.arrival_price_usd},
             )
+            if execute_immediately:
+                Order.objects.create_order(tp)
 
-            for req in reqs:
+            for req in spr_qs:
                 logger.info(
-                    f"TargetPosition {dp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
+                    f"TargetPosition {tp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
                 )
 
 

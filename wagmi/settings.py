@@ -20,7 +20,8 @@ import environ
 
 env = environ.Env(
     # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    WAGMI_ORDER_TESTMODE=(bool, True),
 )
 # reading .env file
 environ.Env.read_env()
@@ -43,14 +44,12 @@ DATABASES = {
     },
 }
 
-RW_YOLO_API_KEY = env("RW_YOLO_API_KEY")
-
 WAGMI_FTX_SUB_ACCOUNT = env("WAGMI_FTX_SUB_ACCOUNT")
 WAGMI_ORDER_TESTMODE = env("WAGMI_ORDER_TESTMODE")
 WAGMI_FTX_API_KEY = env("WAGMI_FTX_API_KEY")
 WAGMI_FTX_API_SECRET = env("WAGMI_FTX_API_SECRET")
 
-RW_YOLO_API_KEY = env("RW_YOLO_API_KEY")
+RW_API_KEY = env("RW_API_KEY")
 RW_YOLO_TRADE_BUFFER = env("RW_YOLO_TRADE_BUFFER")
 
 ALLOWED_HOSTS = [
@@ -76,7 +75,7 @@ INSTALLED_APPS = [
     "django_apscheduler",
     "sizing",
     "execution",
-    "yolo",
+    "weights",
 ]
 
 MIDDLEWARE = [
@@ -162,7 +161,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "default",
         }
@@ -170,7 +169,7 @@ LOGGING = {
     "loggers": {
         "*": {
             "handlers": ["console"],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": True,
         }
     },
