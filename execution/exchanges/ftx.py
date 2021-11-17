@@ -7,6 +7,10 @@ import ftx
 
 from execution.exchanges import BaseExchange
 
+# import http
+
+# http.client.HTTPConnection.debuglevel = 1
+
 logger = logging.getLogger("execution")
 
 
@@ -23,19 +27,26 @@ class FTXExchange(BaseExchange):
         self.testmode = testmode
         logger.debug(f"ftx inited with testmode={testmode}")
 
-    def _parse_symbol(self, symbol):
-        # remove /USD as ftx is inconsistent
-        # e.g. when getting balances it's just ther coin.
-        # When placing an order, you need the denominating currency.
-        if "/" in symbol:
-            symbol = symbol.split("/")[0]
+    def _parse_symbol(self, market):
+        """Remove the USD denominator from a Market.
+
+        Some ftx calls need the market (pair), some only
+        the coin.
+
+        Args:
+            market (str): the market, e.g. BTC/USD
+        Returns:
+            str: The symbol without the /USD e.g. BTC
+        """
+        if "/" in market:
+            symbol = market.split("/")[0]
         return symbol
 
     def get_quote(self, market):
         """Get a quote
 
         Args:
-            market (string): The ticker you want quoted.
+            market (string): the market, e.g. 'BTC/USD'.
 
         Returns:
             dict: a dictionary result
@@ -43,6 +54,16 @@ class FTXExchange(BaseExchange):
         """
         # TODO check there is one and only one result?
         return self.client.get_market(market=market)
+
+    def spot_is_borrowable(self, market):
+        """Check if this spot market has lending (so you can short it).
+
+        Args:
+            market ([type]): [description]
+        """
+        info = self.client.get_market_info(market)
+        if info[0].get("previousFunding"):
+            return True
 
     def get_target_price(self, market, side, aggressive=False):
         """calculate a target price somewhere in the order book
@@ -58,6 +79,7 @@ class FTXExchange(BaseExchange):
         spread_in_ticks = (bid - ask) / tick
         offset = math.ceil(spread_in_ticks / 2)
 
+        # Please can soneone confirm my logic is correct here.
         if (side == self.BUY) and ((bid + offset) < ask):
             return bid + offset
         elif side == self.BUY:
@@ -81,7 +103,6 @@ class FTXExchange(BaseExchange):
             [type]: [description]
         """
         spot_balances = self.client.get_balances()  # spot
-        print(spot_balances)
         symbol = self._parse_symbol(market.name)
         positions = list(filter(lambda x: x["coin"] == symbol, spot_balances))
         if len(positions) == 1:
