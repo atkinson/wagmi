@@ -13,3 +13,5 @@ psycopg2-binary
 ciso8601
 #ftx
 git+git://github.com/atkinson/ftx#egg=ftx
+
+pytest-django
