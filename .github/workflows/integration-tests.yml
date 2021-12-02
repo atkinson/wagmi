@@ -26,6 +26,9 @@ jobs:
         retry_on: error
         command: curl -sSf http://localhost:8080/wagmi > /dev/null 2>&1
 
+    - name: Run tests
+      run: docker-compose -f "trading-server.yml" exec -T django sh -c 'pytest --capture=no -v'
+
     - name: Stop containers
       if: always()
       run: docker-compose -f "trading-server.yml" down

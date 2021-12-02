@@ -23,6 +23,7 @@ services:
 
   postgres:
     image: postgres:12
+    container_name: postgres
     env_file:
       - ./wagmi/.env
 
