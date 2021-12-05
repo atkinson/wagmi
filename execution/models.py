@@ -24,7 +24,7 @@ class OrderManager(models.Manager):
                 api_secret=settings.WAGMI_FTX_API_SECRET,
             )
             exchange.set_position(
-                market=target_position.security,
+                market=target_position.security.name,
                 target_position=target_position.size,
             )
 
