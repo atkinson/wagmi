@@ -53,4 +53,4 @@ def get_yolo_weights():
             )
 
     else:
-        logger.error(f'yolo api failed: {yolo.get("message")}')
+        logger.error(f'yolo api failed: {yolo.get("message")}\nURL:{url}')
