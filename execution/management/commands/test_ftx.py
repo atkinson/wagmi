@@ -18,4 +18,4 @@ class Command(BaseCommand):
             api_key=settings.WAGMI_FTX_API_KEY,
             api_secret=settings.WAGMI_FTX_API_SECRET,
         )
-        exchange.set_position(market="BTC/USD", units=0.0001)
+        exchange.set_position(market="BTC/USD", target_position=0.0001)
