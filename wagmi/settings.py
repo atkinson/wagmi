@@ -54,6 +54,7 @@ RW_YOLO_TRADE_BUFFER = env("RW_YOLO_TRADE_BUFFER")
 
 ALLOWED_HOSTS = [
     "localhost",
+    "127.0.0.1"
 ]
 
 CACHES = {
