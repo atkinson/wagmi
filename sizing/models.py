@@ -23,6 +23,9 @@ class Strategy(models.Model):
     execute_immediately = models.BooleanField(default=False)
     command = models.CharField(max_length=24)
 
+    class Meta:
+        verbose_name_plural = "Strategies"
+
     def __str__(self):
         return self.name
 
@@ -31,6 +34,9 @@ class Exchange(models.Model):
 
     name = models.CharField(max_length=24, db_index=True)
 
+    class Meta:
+        verbose_name_plural = "Exchanges"
+
     def __str__(self):
         return self.name
 
@@ -38,6 +44,9 @@ class Exchange(models.Model):
 class Security(models.Model):
 
     name = models.CharField(max_length=24, db_index=True)
+
+    class Meta:
+        verbose_name_plural = "Securities"
 
     def __str__(self):
         return self.name
