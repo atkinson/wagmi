@@ -3,6 +3,7 @@ import json
 from django.db import models
 from django.conf import settings
 from datetime import datetime
+from django.utils import timezone
 
 from execution.models import Order
 
@@ -188,6 +189,10 @@ class TargetPosition(models.Model):
     exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
     size = models.FloatField(help_text="how many units of the security")
 
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = TargetPositionManager()
+
+    def __str__(self):
+        return f"[{self.exchange.name}] {self.security.name} = {self.size}"
