@@ -72,22 +72,44 @@ class FTXExchange(BaseExchange):
             market (string): [description]
             aggressive (bool, optional): [description]. Defaults to False.
         """
+        assert not aggressive, "unsupported policy aggressive"
         quote = self.get_quote(market)
-        tick = quote.get("sizeIncrement")
+        return self._get_spread_midpoint(market, side)
+
+    def _get_spread_midpoint(self, quote, side):
+        """Compute target price to midpoint of the spread
+        if possible (enough ticks in spread), else at best bid/offer
+
+        Args:
+            quote (object): quote data from API
+            side (object): side
+        """
+        if not side == self.BUY and not side == self.SELL:
+            raise NotImplementedError(f"Unsupported side: {side}")
+        price_increment = quote.get("priceIncrement")
         bid = quote.get("bid")
         ask = quote.get("ask")
-        spread_in_ticks = (bid - ask) / tick
-        offset = math.ceil(spread_in_ticks / 2)
+        assert bid <= ask, "invalid spread data"
+        spread_in_ticks = (ask - bid) / price_increment
 
-        # Please can soneone confirm my logic is correct here.
-        if (side == self.BUY) and ((bid + offset) < ask):
-            return bid + offset
-        elif side == self.BUY:
-            return bid
-        elif (side == self.SELL) and ((ask - offset) > bid):
-            return ask - offset
-        else:
-            return ask
+        if spread_in_ticks <= 1:
+            return (
+                bid if side == self.BUY else ask
+            )  # can't do a midpoint on a spread of 1 tick, default to best bid/ask
+
+        offset_ticks = math.ceil(spread_in_ticks / 2)
+        offset_notional = offset_ticks * price_increment
+
+        if side == self.BUY:
+            target = bid + offset_notional
+            if not (target < ask):
+                raise AssertionError("invalid target price (side=buy)")
+            return target
+        if side == self.SELL:
+            target = ask - offset_notional
+            if not (target > bid):
+                raise AssertionError("invalid target price (side=sell)")
+            return target
 
     def get_tick_size(self, market):
         quote = self.get_quote(market)
@@ -113,9 +135,7 @@ class FTXExchange(BaseExchange):
             print(f"{market} does not have an open position")
             return 0.0
         else:
-            raise IndexError(
-                f"more than one position for {market} in {positions}"
-            )
+            raise IndexError(f"more than one position for {market} in {positions}")
 
     def set_position(self, market: str, target_position: float):
         """[summary]
@@ -166,9 +186,7 @@ class FTXExchange(BaseExchange):
         )
 
         if units < tick:
-            print(
-                f"{market} order size {units} is less than the tick size {tick}"
-            )
+            print(f"{market} order size {units} is less than the tick size {tick}")
 
         elif self.testmode == False:
             try:
