@@ -103,7 +103,7 @@ class FTXExchange(BaseExchange):
             [type]: [description]
         """
         spot_balances = self.client.get_balances()  # spot
-        symbol = self._parse_symbol(market.name)
+        symbol = self._parse_symbol(market)
         positions = list(filter(lambda x: x["coin"] == symbol, spot_balances))
         if len(positions) == 1:
             retval = positions.pop().get("total")
