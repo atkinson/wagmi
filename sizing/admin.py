@@ -32,6 +32,7 @@ class StrategyPositionRequestAdmin(admin.ModelAdmin):
         "weight",
         "arrival_price_usd",
         "calculated_at",
+        "updated_at"
     ]
 
 
@@ -43,6 +44,7 @@ class TargetPositionAdmin(admin.ModelAdmin):
         "security",
         "size",
         "exchange",
+        "updated_at"
     ]
 
 

@@ -188,6 +188,6 @@ class TargetPosition(models.Model):
     exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
     size = models.FloatField(help_text="how many units of the security")
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     objects = TargetPositionManager()
