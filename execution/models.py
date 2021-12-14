@@ -41,9 +41,9 @@ class OrderManager(models.Manager):
 class Order(models.Model, AuditableMixin):
 
     # Having these here causes circular dependency, what's the best solution?
-    # security = models.ForeignKey("Security", on_delete=models.CASCADE)
-    # exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
-    # size = models.FloatField(help_text="how many units of the security")
+    security = models.ForeignKey("sizing.Security", on_delete=models.CASCADE)
+    exchange = models.ForeignKey("sizing.Exchange", on_delete=models.CASCADE)
+    size = models.FloatField(help_text="how many units of the security")
 
     # created_at = models.DateTimeField(auto_now_add=True)
 
@@ -51,7 +51,7 @@ class Order(models.Model, AuditableMixin):
 
 
 class Fill(models.Model, AuditableMixin):
-    #order = models.ForeignKey("Order", on_delete=models.CASCADE)
+    # order = models.ForeignKey("Order", on_delete=models.CASCADE)
 
     # int
     id = models.IntegerField(primary_key=True, editable=False)
@@ -78,4 +78,3 @@ class Fill(models.Model, AuditableMixin):
 
     # datetime
     createdAt = models.DateTimeField(default=timezone.now, editable=False)
-

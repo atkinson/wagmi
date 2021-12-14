@@ -5,8 +5,6 @@ from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
 
-from execution.models import Order
-
 logger = logging.getLogger("sizing")
 
 
@@ -166,6 +164,8 @@ class TargetPositionManager(models.Manager):
                 defaults={"size": desired_size / req.arrival_price_usd},
             )
             if execute_immediately:
+                from execution.models import Order
+
                 Order.objects.create_order(tp)
 
             for req in spr_qs:
