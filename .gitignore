@@ -49,6 +49,8 @@ coverage.xml
 # Django stuff:
 *.log
 *.pot
+/execution/migrations/*
+/sizing/migrations/*
 
 # Sphinx documentation
 docs/_build/
