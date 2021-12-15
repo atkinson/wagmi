@@ -25,3 +25,4 @@ class FillAdmin(admin.ModelAdmin):
     ]
 
 admin.site.register(Fill, FillAdmin)
+admin.site.register(Order, OrderAdmin)
