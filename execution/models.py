@@ -5,6 +5,7 @@ from django.db.models.deletion import CASCADE
 from execution.exchanges import ftx
 from django.utils import timezone
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("execution")
 
 
@@ -37,17 +38,38 @@ class OrderManager(models.Manager):
         for target_position in qs:
             self.create_order(target_position)
 
+    def smart_execute(self, tpr_qs):
+        """Receives a queryset of TargetPositions.
+        Get's current position from exchange.
+        Post's order to correct position"""
+
+        # Add to the database
+        for sp in tpr_qs:
+            Order.objects.create(security=sp.security, exchange=sp.exchange, size=sp.size)
+
+        ftx_target_positions = tpr_qs.filter(exchange__name='ftx')
+        if ftx_target_positions:
+            logger.info(f'Executing {ftx_target_positions.count()} order on FTX')
+            exchange = ftx.FTXExchange(
+                subaccount=settings.WAGMI_FTX_SUB_ACCOUNT,
+                testmode=settings.WAGMI_ORDER_TESTMODE,
+                api_key=settings.WAGMI_FTX_API_KEY,
+                api_secret=settings.WAGMI_FTX_API_SECRET,
+            )
+            exchange.execute_chase_orderbook(query_set=ftx_target_positions)
+
 
 class Order(models.Model, AuditableMixin):
 
-    # Having these here causes circular dependency, what's the best solution?
     security = models.ForeignKey("sizing.Security", on_delete=models.CASCADE)
     exchange = models.ForeignKey("sizing.Exchange", on_delete=models.CASCADE)
     size = models.FloatField(help_text="how many units of the security")
 
-    # created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     objects = OrderManager()
+
+class FillManager(models.Model):
 
 
 class Fill(models.Model, AuditableMixin):

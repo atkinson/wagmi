@@ -5,6 +5,8 @@ from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
 
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sizing")
 
 
@@ -125,7 +127,7 @@ class StrategyPositionRequest(models.Model):
 
 class TargetPositionManager(models.Manager):
     def create_new_desired_positions(
-        self, security=None, execute_immediately=False
+            self, security=None, execute_immediately=False
     ):
         """Once all new Position Requests are in for the day,
         we can now calculate the net of all of these as a set
@@ -134,9 +136,9 @@ class TargetPositionManager(models.Manager):
         Optional - pass in a Security, or Queryset of Security models.
         """
         if (
-            security
-            and isinstance(security, models.QuerySet)
-            and security.model is Security
+                security
+                and isinstance(security, models.QuerySet)
+                and security.model is Security
         ):
             securities = security
         elif security and isinstance(security, Security):
@@ -163,16 +165,26 @@ class TargetPositionManager(models.Manager):
                 exchange=req.exchange,  # TODO - do we care about multiple exchanges?
                 defaults={"size": desired_size / req.arrival_price_usd},
             )
-            if execute_immediately:
-                from execution.models import Order
 
-                Order.objects.create_order(tp)
+            # for req in spr_qs:
+            #     logger.info(
+            #         f"TargetPosition {tp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
+            #     )
 
-            for req in spr_qs:
-                logger.info(
-                    f"TargetPosition {tp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
-                )
+    def processTargetPosition(self, strategy_name: str):
+        """Once all new Position Requests are in for the day,
+        we call this function to send them to the exchange
+        for execution.
 
+        Fields:
+        strategy_name ([str]): The TargetPosition for a single strategy
+        """
+        from execution.models import Order
+        tpr_qs = TargetPosition.objects.filter(strategy__name=strategy_name)
+        if tpr_qs:
+            Order.objects.smart_execute(tpr_qs)
+        else:
+            logger.info("No TargetPosition to process for {strategy_name}")
 
 class TargetPosition(models.Model):
     """Every Security needs a desired position.
@@ -195,4 +207,4 @@ class TargetPosition(models.Model):
     objects = TargetPositionManager()
 
     def __str__(self):
-        return f"[{self.exchange.name}] {self.security.name} = {self.size}"
+        return f"TargetPosition: [{self.exchange.name}] {self.security.name} {self.size}qty"

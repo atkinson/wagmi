@@ -52,5 +52,8 @@ def get_yolo_weights():
                 execute_immediately=position.execute_immediately,
             )
 
+        # Only once we've created all TargetPosition's, we send them for batch execution
+        TargetPosition.objects.processTargetPosition()
+
     else:
         logger.error(f'yolo api failed: {yolo.get("message")}\nURL:{url}')

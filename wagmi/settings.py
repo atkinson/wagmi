@@ -162,7 +162,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "DEBUG",
+            "level": "INFO",
             "class": "logging.StreamHandler",
             "formatter": "default",
         }
@@ -170,7 +170,7 @@ LOGGING = {
     "loggers": {
         "*": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         }
     },
