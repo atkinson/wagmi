@@ -6,6 +6,7 @@ from execution.models import (
     Fill,
 )
 
+
 class OrderAdmin(admin.ModelAdmin):
     list_display = [
         "security",
@@ -13,6 +14,7 @@ class OrderAdmin(admin.ModelAdmin):
         "size",
         "created_at",
     ]
+
 
 class FillAdmin(admin.ModelAdmin):
     list_display = [
@@ -22,9 +24,10 @@ class FillAdmin(admin.ModelAdmin):
         "type",
         "size",
         "liquidity",
-        "created_at",
+        "recorded_at",
     ]
-    readonly_fields=tuple( [fill.name for fill in Fill._meta.get_fields()])
+    readonly_fields = tuple([fill.name for fill in Fill._meta.get_fields()])
+
 
 admin.site.register(Fill, FillAdmin)
 admin.site.register(Order, OrderAdmin)

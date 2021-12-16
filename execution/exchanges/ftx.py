@@ -7,7 +7,6 @@ import ftx
 
 from execution.exchanges import BaseExchange
 
-
 # import http
 
 # http.client.HTTPConnection.debuglevel = 1
@@ -16,7 +15,6 @@ logger = logging.getLogger("ftx")
 
 
 class FTXExchange(BaseExchange):
-
     BUY = LONG = "buy"
     SELL = SHORT = "sell"
 
@@ -138,14 +136,17 @@ class FTXExchange(BaseExchange):
         else:
             raise IndexError(f"more than one position for {market} in {positions}")
 
-    def execute_chase_orderbook(self, query_set):
-        """[summary]
+    def execute_chase_orderbook(self, tp_qs):
+        """Executes a QuerySet of TargetPosition by aggressively chasing
+        the top of the order book.
 
         Args:
-            market ([type]): [description]
-            target_position ([type]): [description]
+            tp_qs (QuerySet): A list of TargetPosition
         """
-        logger.info(query_set.count())
+
+        markets = [position.security for position in tp_qs]
+
+        logger.info(markets)
         pass
 
     def set_position(self, market: str, target_position: float):
@@ -202,13 +203,13 @@ class FTXExchange(BaseExchange):
         elif self.testmode == False:
             try:
                 order_response = self.client.place_order(
-                        market=str(market),
-                        side=side,
-                        price=target_price,
-                        size=units,
-                        type="limit",
-                        post_only=True,
-                    )
+                    market=str(market),
+                    side=side,
+                    price=target_price,
+                    size=units,
+                    type="limit",
+                    post_only=True,
+                )
                 logger.info(order_response)
 
             except Exception as e:
