@@ -79,9 +79,7 @@ class StrategyPositionRequestManager(models.Manager):
         )
         return obj
 
-    def get_position(
-        self, strategy_name: str, exchange_name: str, security_name: str
-    ):
+    def get_position(self, strategy_name: str, exchange_name: str, security_name: str):
         return StrategyPositionRequest.objects.filter(
             strategy__name=strategy_name,
             exchange__name=exchange_name,
@@ -126,9 +124,7 @@ class StrategyPositionRequest(models.Model):
 
 
 class TargetPositionManager(models.Manager):
-    def create_new_desired_positions(
-            self, security=None, execute_immediately=False
-    ):
+    def create_new_desired_positions(self, security=None, execute_immediately=False):
         """Once all new Position Requests are in for the day,
         we can now calculate the net of all of these as a set
         of TargetPositions. One TargetPosition per Security.
@@ -156,9 +152,7 @@ class TargetPositionManager(models.Manager):
             spr_qs = StrategyPositionRequest.objects.filter(security=security)
 
             for req in spr_qs:
-                desired_size += req.weight * float(
-                    req.strategy.max_position_size_usd
-                )
+                desired_size += req.weight * float(req.strategy.max_position_size_usd)
 
             tp, created = TargetPosition.objects.update_or_create(
                 security=security,
@@ -207,4 +201,10 @@ class TargetPosition(models.Model):
     objects = TargetPositionManager()
 
     def __str__(self):
-        return f"TargetPosition: [{self.exchange.name}] {self.security.name} {self.size}qty"
+        return json.dumps(
+            {
+                "security": self.security.name,
+                "exchange": self.exchange.name,
+                "size": self.size,
+            }
+        )
