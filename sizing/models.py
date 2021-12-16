@@ -5,13 +5,11 @@ from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sizing")
 
 
 class Strategy(models.Model):
-
     name = models.CharField(max_length=24, db_index=True)
     exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
     max_position_size_usd = models.DecimalField(
@@ -32,7 +30,6 @@ class Strategy(models.Model):
 
 
 class Exchange(models.Model):
-
     name = models.CharField(max_length=24, db_index=True)
 
     class Meta:
@@ -43,7 +40,6 @@ class Exchange(models.Model):
 
 
 class Security(models.Model):
-
     name = models.CharField(max_length=24, db_index=True)
 
     class Meta:
@@ -55,13 +51,14 @@ class Security(models.Model):
 
 class StrategyPositionRequestManager(models.Manager):
     def set_position(
-        self,
-        strategy_name: str,
-        exchange_name: str,
-        security_name: str,
-        weight: float,
-        arrival_price_usd: float,
-        calculated_at: datetime,
+            self,
+            strategy_name: str,
+            exchange_name: str,
+            security_name: str,
+            weight: float,
+            norm_weight: float,
+            arrival_price_usd: float,
+            calculated_at: datetime,
     ):
         strategy, _ = Strategy.objects.get_or_create(name=strategy_name)
         exchange, _ = Exchange.objects.get_or_create(name=exchange_name)
@@ -73,6 +70,7 @@ class StrategyPositionRequestManager(models.Manager):
             security=security,
             defaults={
                 "weight": weight,
+                "norm_weight": norm_weight,
                 "arrival_price_usd": arrival_price_usd,
                 "calculated_at": calculated_at,
             },
@@ -103,6 +101,7 @@ class StrategyPositionRequest(models.Model):
     exchange = models.ForeignKey("Exchange", on_delete=models.CASCADE)
     security = models.ForeignKey("Security", on_delete=models.CASCADE)
     weight = models.FloatField()
+    norm_weight = models.FloatField()
     arrival_price_usd = models.FloatField()
     calculated_at = models.DateTimeField()
 
@@ -118,6 +117,7 @@ class StrategyPositionRequest(models.Model):
                 "exchange": self.exchange.name,
                 "security": self.security.name,
                 "weight": self.weight,
+                "norm_weight": self.norm_weight,
                 "arrival_price_usd": self.arrival_price_usd,
             }
         )
@@ -152,7 +152,7 @@ class TargetPositionManager(models.Manager):
             spr_qs = StrategyPositionRequest.objects.filter(security=security)
 
             for req in spr_qs:
-                desired_size += req.weight * float(req.strategy.max_position_size_usd)
+                desired_size += req.norm_weight * float(req.strategy.max_position_size_usd)
 
             tp, created = TargetPosition.objects.update_or_create(
                 security=security,
@@ -160,12 +160,12 @@ class TargetPositionManager(models.Manager):
                 defaults={"size": desired_size / req.arrival_price_usd},
             )
 
-            # for req in spr_qs:
-            #     logger.info(
-            #         f"TargetPosition {tp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
-            #     )
+            for req in spr_qs:
+                logger.info(
+                    f"TargetPosition {tp.id} includes StrategyPositionRequest {req.strategy}, {req.exchange}, {req.security}, {req.weight}, {req.arrival_price_usd}"
+                )
 
-    def processTargetPosition(self, strategy_name: str):
+    def processTargetPosition(self):
         """Once all new Position Requests are in for the day,
         we call this function to send them to the exchange
         for execution.
@@ -174,11 +174,13 @@ class TargetPositionManager(models.Manager):
         strategy_name ([str]): The TargetPosition for a single strategy
         """
         from execution.models import Order
-        tpr_qs = TargetPosition.objects.filter(strategy__name=strategy_name)
+        tpr_qs = TargetPosition.objects.all()
         if tpr_qs:
-            Order.objects.smart_execute(tpr_qs)
+            Order.objects.create_orders(tpr_qs)
+            # Order.objects.smart_execute(tpr_qs)
         else:
-            logger.info("No TargetPosition to process for {strategy_name}")
+            logger.info("No TargetPosition to process}")
+
 
 class TargetPosition(models.Model):
     """Every Security needs a desired position.

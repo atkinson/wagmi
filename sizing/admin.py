@@ -30,6 +30,7 @@ class StrategyPositionRequestAdmin(admin.ModelAdmin):
         "exchange",
         "security",
         "weight",
+        "norm_weight",
         "arrival_price_usd",
         "calculated_at",
         "updated_at"

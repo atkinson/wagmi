@@ -22,17 +22,25 @@ def get_yolo_weights():
 
     if yolo.get("success") == "true":
         last_updated = yolo.get("last_updated")
-        for position in yolo.get("data"):
+        data = yolo.get("data")
+
+        # we normalise the weights such that their absolute sum is 1 to allocate all max_position_size_usd
+        abs_sum_weights = sum([abs(weight['combo_weight']) for weight in data])
+
+        for position in data:
             logger.info(
                 f"{position.get('ticker')}, {position.get('combo_weight')}, {position.get('arrival_price')}"
             )
             calculated_at = datetime.fromtimestamp(last_updated, timezone.utc)
+
+            # TODO check if calculated_at is more recent than those currently stored in DB
 
             spr = StrategyPositionRequest.objects.set_position(
                 strategy_name=strategy.name,
                 exchange_name=strategy.exchange,
                 security_name=position.get("ticker"),
                 weight=position.get("combo_weight"),
+                norm_weight=position.get("combo_weight") / abs_sum_weights,
                 arrival_price_usd=position.get("arrival_price"),
                 calculated_at=calculated_at,
             )
