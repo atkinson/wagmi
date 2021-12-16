@@ -69,34 +69,49 @@ class Order(models.Model, AuditableMixin):
 
     objects = OrderManager()
 
-class FillManager(models.Model):
+
+class FillManager(models.Manager):
+
+    def create_from_ftx(self, fills):
+        for fill in fills:
+            Fill.objects.create(**fill)
 
 
 class Fill(models.Model, AuditableMixin):
+    """ Variable names match those of FTX,
+    so you can easily submit fills using
+    Fill(**order_response)
+
+    https://docs.ftx.com/#fills
+    """
+
     # order = models.ForeignKey("Order", on_delete=models.CASCADE)
 
     # int
-    id = models.IntegerField(primary_key=True, editable=False)
-
-    # boolean
-    ioc = models.BooleanField(default=None, editable=False)
-    postOnly = models.BooleanField(default=None, editable=False)
-    reduceOnly = models.BooleanField(default=None, editable=False)
-    liquidation = models.BooleanField(default=None, editable=False)
+    # FTX has 12 integer index, so need Big BigIntegerField (which I think is faster than CharField)
+    id = models.BigIntegerField(primary_key=True, editable=False, db_index=True)
+    orderId = models.BigIntegerField(editable=False)
+    tradeId = models.BigIntegerField(editable=False)
 
     # float
-    size = models.FloatField(default=None, editable=False)
+    fee = models.FloatField(default=None, editable=False)
+    feeRate = models.FloatField(default=None, editable=False)
     price = models.FloatField(default=None, editable=False)
-    filledSize = models.FloatField(default=None, editable=False)
-    avgFillPrice = models.FloatField(default=None, editable=False)
-    remainingSize = models.FloatField(default=None, editable=False)
+    size = models.FloatField(default=None, editable=False)
 
     # char
-    market = models.CharField(default=None, editable=False, max_length=10)
-    side = models.CharField(default=None, editable=False, max_length=4)
-    type = models.CharField(default=None, editable=False, max_length=5)
-    status = models.CharField(default=None, editable=False, max_length=10)
-    clientId = models.CharField(default=None, editable=False, max_length=10)
+    feeCurrency = models.CharField(default=None, editable=False, max_length=10)
+    future = models.CharField(default=None, editable=False, max_length=20, null=True)
+    liquidity = models.CharField(default=None, editable=False, max_length=10)
+    market = models.CharField(default=None, editable=False, max_length=20)
+    baseCurrency = models.CharField(default=None, editable=False, max_length=10, null=True)
+    quoteCurrency = models.CharField(default=None, editable=False, max_length=10, null=True)
+    side = models.CharField(default=None, editable=False, max_length=10)
+    type = models.CharField(default=None, editable=False, max_length=10)
 
     # datetime
-    createdAt = models.DateTimeField(default=timezone.now, editable=False)
+    time = models.DateTimeField(default=timezone.now, editable=False)
+    recorded_at = models.DateTimeField(auto_now_add=True, editable=False)
+
+    objects = FillManager()
+

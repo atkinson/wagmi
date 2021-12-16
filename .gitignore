@@ -72,4 +72,6 @@ notebooks/*.hdf5
 
 # Rich's things
 signals
-.env
+.env.env
+# Charles' things
+snippets.py
