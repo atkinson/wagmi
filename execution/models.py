@@ -6,7 +6,6 @@ from django.utils import timezone
 
 from execution.exchanges import ftx
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("execution")
 
 
@@ -41,7 +40,7 @@ class OrderManager(models.Manager):
                                  exchange=target_position.exchange,
                                  size=target_position.size)
 
-    def smart_execute(self, tpr_qs):
+    def chase_execute(self, tpr_qs):
         """Receives a queryset of TargetPositions.
         Gets current position from exchange.
         Post's order to correct position"""

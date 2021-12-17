@@ -5,7 +5,6 @@ from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sizing")
 
 
