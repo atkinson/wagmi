@@ -11,12 +11,14 @@ from execution.exchanges import BaseExchange
 
 # http.client.HTTPConnection.debuglevel = 1
 
-logger = logging.getLogger("ftx")
+logger = logging.getLogger(__name__)
 
 
 class FTXExchange(BaseExchange):
     BUY = LONG = "buy"
     SELL = SHORT = "sell"
+    fiats = ['USD', 'EUR']
+    stables = ['USDT']
 
     def __init__(self, subaccount, testmode, api_key, api_secret) -> None:
 
@@ -37,8 +39,11 @@ class FTXExchange(BaseExchange):
         Returns:
             str: The symbol without the /USD e.g. BTC
         """
+        symbol = None
         if "/" in market:
             symbol = market.split("/")[0]
+        else:
+            logger.warning(f"no quote currency found for {market}")
         return symbol
 
     def get_quote(self, market):
@@ -115,26 +120,44 @@ class FTXExchange(BaseExchange):
         return quote.get("sizeIncrement")
 
     def _get_position(self, market: str):
-        """[summary]
+        """Get the size of a spot, fiat, stable or future position
 
         Args:
-            market ([type]): [description]
+            market (str): The symbol such as 'USD', 'USDT', 'BTC/USD' or 'BTC-PERP'
 
         Returns:
-            [type]: [description]
+            [float]: The amount of asset held in the account
         """
-        spot_balances = self.client.get_balances()  # spot
-        symbol = self._parse_symbol(market)
-        positions = list(filter(lambda x: x["coin"] == symbol, spot_balances))
+        balances, type = None, None
+        market = market.upper()
+        symbol = market
+
+        if any(currency == market for currency in self.fiats + self.stables):  # stable and fiat
+            type = 'stable'
+            balances = self.client.get_balances()
+            positions = list(filter(lambda x: x['coin'] == symbol, balances))
+        elif any(fiat in market for fiat in self.fiats):  # spot
+            type = 'coin'
+            balances = self.client.get_balances()
+            symbol = self._parse_symbol(market)
+            positions = list(filter(lambda x: x['coin'] == symbol, balances))
+        else:  # futures
+            type = 'future'
+            balances = self.client.get_positions()
+            positions = list(filter(lambda x: x['future'] == symbol, balances))
+
         if len(positions) == 1:
-            retval = positions.pop().get("total")
-            print(f"{market} has exactly one open position of size {retval}")
+            if type == 'coin' or type == 'stable':
+                retval = positions.pop().get("total")
+            else:
+                retval = positions.pop().get("size")
+            logger.info(f"{market} has exactly one open {type} position of size {retval}")
             return retval
         elif not len(positions):
-            print(f"{market} does not have an open position")
+            logger.info(f"{market} does not have an open position")
             return 0.0
         else:
-            raise IndexError(f"more than one position for {market} in {positions}")
+            raise IndexError(f"more than one position for {market} {type} in {positions}")
 
     def execute_chase_orderbook(self, tp_qs):
         """Executes a QuerySet of TargetPosition by aggressively chasing
@@ -145,7 +168,7 @@ class FTXExchange(BaseExchange):
         """
 
         markets = [position.security for position in tp_qs]
-
+        logger.info("starting execution...")
         logger.info(markets)
         pass
 
