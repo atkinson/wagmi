@@ -16,5 +16,7 @@ git+git://github.com/atkinson/ftx#egg=ftx
 
 pytest-django
 
-# deployment on heroku.
+# deployment on heroku
 gunicorn
+whitenoise
+dj-database-url

@@ -45,29 +45,50 @@ class OrderManager(models.Manager):
         Gets current position from exchange.
         Post's order to correct position"""
 
-        # Add to the database
+        exchange = ftx.FTXExchange(
+            subaccount=settings.WAGMI_FTX_SUB_ACCOUNT,
+            testmode=settings.WAGMI_ORDER_TESTMODE,
+            api_key=settings.WAGMI_FTX_API_KEY,
+            api_secret=settings.WAGMI_FTX_API_SECRET,
+        )
+        orders = []
+        # compute delta, place the order and add to the database
         for sp in tpr_qs:
-            Order.objects.create(security=sp.security, exchange=sp.exchange, size=sp.size)
+            position = exchange.get_position(sp.security.name)
+            delta = position - sp.size
+            side = 'buy' if delta > 0 else 'sell'
 
-        ftx_tpr_qs = tpr_qs.filter(exchange__name='ftx')
+            order = Order.objects.create(security=sp.security,
+                                         exchange=sp.exchange,
+                                         side=side,
+                                         size=sp.size,
+                                         size_delta=delta,
+                                         )
 
-        if ftx_tpr_qs:
-            logger.info(f'Executing {ftx_tpr_qs.count()} order on FTX')
-            exchange = ftx.FTXExchange(
-                subaccount=settings.WAGMI_FTX_SUB_ACCOUNT,
-                testmode=settings.WAGMI_ORDER_TESTMODE,
-                api_key=settings.WAGMI_FTX_API_KEY,
-                api_secret=settings.WAGMI_FTX_API_SECRET,
-            )
-            exchange.execute_chase_orderbook(tp_qs=ftx_tpr_qs)
+            response = exchange._place_order(market=sp.security.name,
+                                             side=side,
+                                             units=abs(delta))
+
+            order.order_id = response['id']
+            order.status = response['status']
+            order.save()
+            orders.append(order)
+
+        # TODO loops through orders and update price until they're all filled
 
 
 class Order(models.Model, AuditableMixin):
     security = models.ForeignKey("sizing.Security", on_delete=models.CASCADE)
     exchange = models.ForeignKey("sizing.Exchange", on_delete=models.CASCADE)
     size = models.FloatField(help_text="how many units of the security")
+    size_delta = models.FloatField()
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    order_id = models.BigIntegerField(default=0)
+
+    status = models.CharField(default='created', max_length=10)
+    side = models.CharField(default=None, editable=False, max_length=10)
 
     objects = OrderManager()
 

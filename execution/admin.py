@@ -13,7 +13,11 @@ class OrderAdmin(admin.ModelAdmin):
         "exchange",
         "size",
         "created_at",
+        "status",
+        "id",
     ]
+
+    readonly_fields = tuple([order.name for order in Order._meta.get_fields()])
 
 
 class FillAdmin(admin.ModelAdmin):

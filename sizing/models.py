@@ -175,7 +175,7 @@ class TargetPositionManager(models.Manager):
         from execution.models import Order
         tpr_qs = TargetPosition.objects.all()
         if tpr_qs:
-            Order.objects.create_orders(tpr_qs)
+            Order.objects.chase_execute(tpr_qs)
             # Order.objects.smart_execute(tpr_qs)
         else:
             logger.info("No TargetPosition to process}")

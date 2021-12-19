@@ -90,6 +90,7 @@ class FTXExchange(BaseExchange):
         """
         if not side == self.BUY and not side == self.SELL:
             raise NotImplementedError(f"Unsupported side: {side}")
+        print(quote)
         price_increment = quote.get("priceIncrement")
         bid = quote.get("bid")
         ask = quote.get("ask")
@@ -119,7 +120,7 @@ class FTXExchange(BaseExchange):
         quote = self.get_quote(market)
         return quote.get("sizeIncrement")
 
-    def _get_position(self, market: str):
+    def get_position(self, market: str):
         """Get the size of a spot, fiat, stable or future position
 
         Args:
@@ -181,7 +182,7 @@ class FTXExchange(BaseExchange):
         """
 
         # TODO Need to consider if you can enter a short position on this security.
-        current_position = self._get_position(market)
+        current_position = self.get_position(market)
 
         delta = target_position - current_position
 
@@ -194,6 +195,20 @@ class FTXExchange(BaseExchange):
         # TODO
         # log whatgever you do.
 
+    def _get_price_from_orderbook(self, market, bids_asks: str, depth: int):
+        """Get price at nth level in the orderbook
+
+        Args:
+            market (str): The market symbol
+            bids_asks (str): If we're interested in bids or asks
+            depth (int): Distance to the top of the orderbook
+        """
+        if bids_asks == 'bids' or bids_asks == 'asks':
+            order_book = self.client.get_orderbook(market=market, depth=depth)
+            return order_book[bids_asks][-1][0]
+        else:
+            raise AssertionError(f"bids_asks should be either asks or bids and not {bids_asks}")
+
     def _place_order(self, market: str, side: str, units: float):
         """[summary]
 
@@ -205,7 +220,9 @@ class FTXExchange(BaseExchange):
 
         ### TODO Also need to check open orders....
 
-        target_price = self.get_target_price(market, side)
+        # target_price = self.get_target_price(market, side)
+        bids_asks = 'bids' if side == 'buy' else 'asks'
+        target_price = self._get_price_from_orderbook(market=market, bids_asks=bids_asks, depth=10)
         consideration = target_price * units
 
         tick = self.get_tick_size(market)
@@ -221,9 +238,23 @@ class FTXExchange(BaseExchange):
         )
 
         if units < tick:
-            print(f"{market} order size {units} is less than the tick size {tick}")
+            logger.info(f"{market} order size {units} is less than the tick size {tick}")
+            return {'id': 000000000000, 'status': 'testing'}
 
-        elif self.testmode == False:
+        # if we're shorting an asset an it's spot we need to make sure it's available for borrow
+        # CRO is an example of an asset that is in the universe and can't be borrowed - therefore need future
+        # TODO ideally this needs to be handled by Security model Manager
+        if side == self.SELL:
+            # get lending rate, if it returns empty list then probably it's a future so we can carry on
+            lending_rates = self.client.get_market_info(market)
+            if lending_rates:
+                symbol = self._parse_symbol(market)
+                rate = next(rate for rate in lending_rates if rate["coin"] == symbol)
+                if rate['estimatedRate'] == None:
+                    logger.warning(f"Cannot open a short spot position for {market}, not available for borrow.")
+                    return {'id': 000000000000, 'status': 'failed'}
+
+        if self.testmode == False or 'LTC' in market:
             try:
                 order_response = self.client.place_order(
                     market=str(market),
@@ -233,8 +264,12 @@ class FTXExchange(BaseExchange):
                     type="limit",
                     post_only=True,
                 )
-                logger.info(order_response)
+                logger.info(json.dumps(order_response))
+                return order_response
 
             except Exception as e:
                 print("Exception!!")
                 raise e
+        # return JSON for testing mode
+        else:
+            return {'id': 000000000000, 'status': 'testing'}
