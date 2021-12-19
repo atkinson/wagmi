@@ -241,8 +241,8 @@ class FTXExchange(BaseExchange):
             logger.info(f"{market} order size {units} is less than the tick size {tick}")
             return {'id': 000000000000, 'status': 'testing'}
 
-        # if we're shorting an asset an it's spot we need to make sure it's available for borrow
-        # CRO is an example of an asset that is in the universe and can't be borrowed - therefore need future
+        # if we're shorting a spot asset we need to make sure it's available for borrow
+        # CRO for example can't be borrowed - therefore need future
         # TODO ideally this needs to be handled by Security model Manager
         if side == self.SELL:
             # get lending rate, if it returns empty list then probably it's a future so we can carry on
@@ -254,7 +254,7 @@ class FTXExchange(BaseExchange):
                     logger.warning(f"Cannot open a short spot position for {market}, not available for borrow.")
                     return {'id': 000000000000, 'status': 'failed'}
 
-        if self.testmode == False or 'LTC' in market:
+        if self.testmode == False:
             try:
                 order_response = self.client.place_order(
                     market=str(market),
