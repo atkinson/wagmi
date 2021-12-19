@@ -15,3 +15,6 @@ ciso8601
 git+git://github.com/atkinson/ftx#egg=ftx
 
 pytest-django
+
+# deployment on heroku.
+gunicorn

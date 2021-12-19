@@ -76,3 +76,5 @@ signals
 
 # Charles' things
 snippets.py
+Procfile
+Procfile.windows
