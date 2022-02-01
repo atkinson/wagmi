@@ -1,7 +1,7 @@
 import pytest
 from django.test import TestCase
 from django.core import management
-from sizing.models import Strategy, StrategyPositionRequest, TargetPosition, Order
+from sizing.models import Strategy, StrategyPositionRequest, TargetPosition
 from .test_server import TestServer
 
 strategy_under_test = "yolo"
